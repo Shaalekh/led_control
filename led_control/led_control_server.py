@@ -1,4 +1,5 @@
 import rclpy
+import time
 from rclpy.node import Node
 from std_srvs.srv import SetBool
 
@@ -6,28 +7,39 @@ class LedControlClass(Node):
     def __init__(self):
         super().__init__('led_control_server')
         self.ledstate=False
-        self.ledsrv=self.create_service(SetBool, 'led_state', self.xor_callback)
+        self.clock_state=False
+        self.ledsrv=self.create_service(SetBool, 'led_state', self.led_control_callback)
         #tenary operator is used in logging
         self.get_logger().warn("Current Led state: ON" if self.ledstate==True else "Current Led state: OFF")
         
-    def xor_callback(self, request, response):
-        a = request.data
-        b = self.ledstate
-        c = not a and b or a and not b
-        if c is True:
-            self.state_trigger()
-            response.success = True
-            response.message = 'LED turned OFF' if a is False else 'LED turned ON'
+    def led_control_callback(self, request, response):
+        requested_state = request.data
+        current_state = self.ledstate
+        #XOR based problem solving approach
+        decision = not requested_state and current_state or requested_state and not current_state
+        start_time = time.time()
+
+        #simluate harware delay
+        time.sleep(0.9)
+
+        elapsed = time.time() - start_time
+
+        if decision is True:
+            if  elapsed < 1.0:
+                self.state_trigger()
+                response.success = True
+                response.message = 'LED turned OFF' if requested_state is False else 'LED turned ON'
+            else:
+                response.success = False
+                response.message = 'Service timed out. Please try again.'
         else:
             response.success = False
-            response.message = 'LED is already ON' if a is True else 'LED is already OFF'
-        print("Response:", response.success, type(response.success))
-        
+            response.message = 'LED is already ON' if requested_state is True else 'LED is already OFF'
+            self.get_logger().info(f"Request: {request.data} Response: {response.success}")
         return response
     
     def state_trigger(self):
         self.ledstate = not self.ledstate
-        print(self.ledstate)
 
     
 def main() -> None:
