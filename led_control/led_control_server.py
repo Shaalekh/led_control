@@ -17,7 +17,6 @@ class LedControlClass(Node):
         c = not a and b or a and not b
         if c is True:
             self.ledstate = not self.ledstate
-            self.state_trigger()
             response.success = True
             response.message = 'LED turned OFF' if a is False else 'LED turned ON'
         else:
