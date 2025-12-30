@@ -5,7 +5,7 @@ from std_srvs.srv import Trigger
 class SafetyCheckServerClass(Node):
     def __init__(self):
         super().__init__('safety_check_server')
-        self.emergency_stop_status=True
+        self.emergency_stop_status=False
         self.create_service(Trigger, 'safety_check', self.safety_check_callback)
         self.get_logger().info("Safety Check Server is active and running")
 
