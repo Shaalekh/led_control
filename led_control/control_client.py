@@ -11,8 +11,6 @@ class ControlClientClass(Node):
         self.pwr_cli = self.create_client(Trigger, 'power_check')
         self.sft_cli = self.create_client(Trigger, 'safety_check')
         #wait_for_service to be active
-        while not self.led_cli.wait_for_service(1):
-            self.get_logger().info('led_control service not available, waiting...')
             
     def send_request(self):
         request=SetBool.Request()
@@ -20,7 +18,7 @@ class ControlClientClass(Node):
         return self.led_cli.call_async(request)
     
     def _request_pwr_check(self):
-        while not self.led_cli.wait_for_service(1.0):
+        while not self.pwr_cli.wait_for_service(1.0):
             self.get_logger().info('power_check service is not available, waiting...')
         request=Trigger.Request()
         future = self.pwr_cli.call_async(request)
@@ -43,6 +41,8 @@ def main():
     try:
         power_response = node._request_pwr_check()
         safety_response = node._request_sft_check()
+        while not node.led_cli.wait_for_service(1):
+            node.get_logger().info('led_control service not available, waiting...')
         if safety_response[0] and power_response[0]:
             future=node.send_request()
             rclpy.spin_until_future_complete(node, future)
